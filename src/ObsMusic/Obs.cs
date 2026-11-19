@@ -1,3 +1,4 @@
+using Windows.Devices.Enumeration;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -125,5 +126,68 @@ static class Watch
             }
             await Task.Delay(2000);
         }
+    }
+}
+
+// 診断（読むだけ）: モニタリングデバイス、各入力のモニタリング設定、Windows の再生デバイスを並べ、音が二重になる設定を知らせる。
+static class Audio
+{
+    public static async Task Run(string password)
+    {
+        using var obs = new ObsClient();
+        await obs.Connect("ws://localhost:4455", password);
+
+        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "obs-studio");
+        var profile = Ini(Path.Combine(dir, "user.ini"), "ProfileDir");
+        var ini = Path.Combine(dir, "basic", "profiles", profile, "basic.ini");
+        var devId = Ini(ini, "MonitoringDeviceId");
+        Console.WriteLine($"プロファイル: {profile}");
+        Console.WriteLine($"モニタリングデバイス: {Ini(ini, "MonitoringDeviceName")}");
+
+        var monitored = new List<string>();
+        Console.WriteLine("入力ごとのモニタリング:");
+        foreach (var i in (await obs.Request("GetInputList"))["inputs"]!.AsArray())
+        {
+            var name = (string)i!["inputName"]!;
+            try
+            {
+                var t = (string)(await obs.Request("GetInputAudioMonitorType", new JsonObject { ["inputName"] = name }))["monitorType"]!;
+                Console.WriteLine($"  {name}: {t.Replace("OBS_MONITORING_TYPE_", "")}");
+                if (!t.EndsWith("NONE")) monitored.Add(name);
+            }
+            catch { } // 音声のない入力（画像など）は取れないので飛ばす
+        }
+
+        Console.WriteLine("Windows の再生デバイス:");
+        foreach (var d in await DeviceInformation.FindAllAsync(DeviceClass.AudioRender))
+            Console.WriteLine("  " + d.Name);
+
+        if (monitored.Count > 0 && devId == "default")
+            Console.WriteLine($"\n注意: モニタリングが既定のデバイスです。{string.Join("、", monitored)} の音が、元の音と重なって二重に聞こえます。");
+    }
+
+    static string Ini(string path, string key) =>
+        File.ReadLines(path).Select(l => l.Split('=', 2)).FirstOrDefault(p => p.Length == 2 && p[0].TrimStart('﻿') == key)?[1] ?? "";
+}
+
+// 入力のモニタリング設定を書き換える。mode: none / monitor（モニターのみ） / both（モニターと出力）
+static class Monitor
+{
+    public static async Task Run(string input, string mode, string password)
+    {
+        var type = mode switch
+        {
+            "none" => "OBS_MONITORING_TYPE_NONE",
+            "monitor" => "OBS_MONITORING_TYPE_MONITOR_ONLY",
+            "both" => "OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT",
+            _ => throw new ArgumentException("mode は none / monitor / both のどれか"),
+        };
+        using var obs = new ObsClient();
+        await obs.Connect("ws://localhost:4455", password);
+        var req = new JsonObject { ["inputName"] = input };
+        var now = (string)(await obs.Request("GetInputAudioMonitorType", req))["monitorType"]!;
+        if (now == type) { Console.WriteLine($"{input}: すでに {mode} です。変更なし。"); return; }
+        await obs.Request("SetInputAudioMonitorType", new JsonObject { ["inputName"] = input, ["monitorType"] = type });
+        Console.WriteLine($"{input}: {now.Replace("OBS_MONITORING_TYPE_", "")} -> {type.Replace("OBS_MONITORING_TYPE_", "")}");
     }
 }

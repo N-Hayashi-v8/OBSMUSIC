@@ -7,12 +7,26 @@ if (args.Length > 0 && args[0] == "probe")
     return;
 }
 
-// dotnet run -- watch [ソース名] [窓の名前に含む語] [パスワード]
+// dotnet run -- audio [パスワード]
+if (args.Length > 0 && args[0] == "audio")
+{
+    await Audio.Run(args.Length > 1 ? args[1] : "");
+    return;
+}
+
+// dotnet run -- watch[ソース名] [窓の名前に含む語] [パスワード]
 if (args.Length > 0 && args[0] == "watch")
 {
     await Watch.Run(args.Length > 1 ? args[1] : "ウィンドウキャプチャ 2",
                     args.Length > 2 ? args[2] : "YouTube Music",
                     args.Length > 3 ? args[3] : "");
+    return;
+}
+
+// dotnet run -- monitor 入力名 none|monitor|both [パスワード]
+if (args.Length > 2 && args[0] == "monitor")
+{
+    await Monitor.Run(args[1], args[2], args.Length > 3 ? args[3] : "");
     return;
 }
 

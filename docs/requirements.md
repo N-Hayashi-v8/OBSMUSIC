@@ -34,6 +34,20 @@
 - 各要求の項目は未読。実装前に該当部分を読む。
 - 「取得できなくなる」原因がウィンドウタイトルの変化かどうかは未確認。
 
+## 音声の診断（実装済み、読むだけ）
+
+- `dotnet run -- audio` で、OBS のモニタリングデバイスと各入力のモニタリング設定、Windows の再生デバイスを並べる。モニタリングが既定のデバイスなら、二重に聞こえると知らせる。
+- モニタリングデバイスは obs-websocket から読み書きできないので、`%APPDATA%\obs-studio\user.ini` の `ProfileDir` と、そのプロファイルの `basic.ini` の `MonitoringDeviceId` / `MonitoringDeviceName` を読んでいる。OBS 起動中に書いても反映されない見込みなので、書き換えはしない。
+- 入力ごとのモニタリング設定（NONE / MONITOR_ONLY / MONITOR_AND_OUTPUT）は obs-websocket で読み書きできる。診断では読むだけ。
+- 本人の環境では、ゲームと BGM の入力が MONITOR_AND_OUTPUT、モニタリングデバイスが SYNCROOM。
+
+## モニタリング設定の書き換え（実装済み）
+
+- `dotnet run -- monitor 入力名 none|monitor|both` で、入力のモニタリング設定を変える（monitor はモニターのみ、both はモニターと出力）。すでに同じ値なら何もしない。
+- 動作確認は、音のない入力（notion1）で none → monitor → none と往復して行った。none には戻せた。
+- 気になる点: monitor を設定した直後の読み戻しが MONITOR_AND_OUTPUT だった（OBS の画面が「有効にする」の1つのチェックになっていることと関係がありそうだが、原因は未確認）。monitor を使う前に確かめる。
+- モニタリングデバイスは書き換えない（上の「音声の診断」を参照）。
+
 ## 未確認
 
 - 取得できなくなる原因（ウィンドウタイトルが曲ごとに変わるためか）
