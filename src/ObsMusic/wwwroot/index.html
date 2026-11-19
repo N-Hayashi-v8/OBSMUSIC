@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Now Playing</title>
+<style>
+  body { margin: 0; background: transparent; font-family: sans-serif; color: #fff; text-shadow: 0 0 4px #000; }
+  #box { display: none; align-items: center; gap: 16px; padding: 12px; width: fit-content; background: rgba(0, 0, 0, 0.5); border-radius: 12px; }
+  img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; }
+  #title { font-size: 28px; font-weight: bold; }
+  #artist { font-size: 20px; }
+</style>
+<div id="box"><img id="art"><div><div id="title"></div><div id="artist"></div></div></div>
+<script>
+let last = "";
+setInterval(async () => {
+  const n = await (await fetch("/api/now")).json();
+  box.style.display = n.playing ? "flex" : "none";
+  if (!n.playing) return;
+  const key = n.title + "|" + n.artist;
+  if (key === last) return;
+  last = key;
+  title.textContent = n.title; artist.textContent = n.artist;
+  art.src = "/api/thumb?" + encodeURIComponent(key);
+}, 1000);
+</script>
