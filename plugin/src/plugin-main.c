@@ -1,6 +1,6 @@
 /*
-Plugin Name
-Copyright (C) <Year> <Developer> <Email Address>
+OBSMUSIC
+Copyright (C) 2026 N-Hayashi-v8
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

@@ -135,3 +135,11 @@
 - 入れると再生デバイスに「CABLE Input」が増える。「ツール → OBSMUSIC モニタリングデバイスの設定」でこれを選び、OBS で問題なく動くことを確認した（利用者）。
 - Discord の Go Live でも、受け取る側に BGM が届いた（利用者が確認）。VB-CABLE で配布先の人も同じ使い方ができる。
 - 配布ページに書くこと（案）: VB-CABLE の入手先と入れ方、OBS で選ぶデバイス名「CABLE Input」、既定の再生デバイスが切り替わったら戻すこと。
+
+## 配布の準備（2026-11-20）
+
+- ライセンス: GPL-2.0 以降。libobs と obs-frontend-api は GPL2 以降で例外条項がない、という OBS フォーラムの回答による（公式の方針ページは見つからなかった）。ルートに LICENSE を置いた。
+- 公開: 今のリポジトリ（N-Hayashi-v8/OBSMUSIC）を公開し、Releases に zip を置く（利用者の決定）。コミット履歴の作者情報（本名とメール）も公開されることは説明済み。
+- 作者名は N-Hayashi-v8。`plugin/buildspec.json` の version を 0.1.0、website をリポジトリの URL、email を空にした。dll のバージョン情報に反映される。
+- 配布ページはルートの README.md。入れ方、VB-CABLE の推奨、使い方、制限、ビルド方法、ライセンスを書いた。
+- 配布物: `plugin/release/obsmusic-0.1.0-windows-x64.zip`（`obsmusic/bin/64bit/obsmusic.dll`、`obsmusic/data/locale/en-US.ini`、`obsmusic/LICENSE`）。zip は git に入れない。
