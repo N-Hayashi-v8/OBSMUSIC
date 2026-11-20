@@ -133,5 +133,5 @@
 - 配布ページで勧める VB-CABLE を、本人の PC に入れて試した。
 - 公式: https://vb-audio.com/Cable/ （寄付制で、使うだけなら無料）。手順は、VBCABLE_Driver_Pack46.zip を展開し、セットアップを管理者として実行し、再起動する。
 - 入れると再生デバイスに「CABLE Input」が増える。「ツール → OBSMUSIC モニタリングデバイスの設定」でこれを選び、OBS で問題なく動くことを確認した（利用者）。
-- 未確認: VB-CABLE を使ったときに Discord の Go Live で BGM が届くか。
+- Discord の Go Live でも、受け取る側に BGM が届いた（利用者が確認）。VB-CABLE で配布先の人も同じ使い方ができる。
 - 配布ページに書くこと（案）: VB-CABLE の入手先と入れ方、OBS で選ぶデバイス名「CABLE Input」、既定の再生デバイスが切り替わったら戻すこと。
