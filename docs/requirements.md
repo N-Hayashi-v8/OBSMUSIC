@@ -143,3 +143,10 @@
 - 作者名は N-Hayashi-v8。`plugin/buildspec.json` の version を 0.1.0、website をリポジトリの URL、email を空にした。dll のバージョン情報に反映される。
 - 配布ページはルートの README.md。入れ方、VB-CABLE の推奨、使い方、制限、ビルド方法、ライセンスを書いた。
 - 配布物: `plugin/release/obsmusic-0.1.0-windows-x64.zip`（`obsmusic/bin/64bit/obsmusic.dll`、`obsmusic/data/locale/en-US.ini`、`obsmusic/LICENSE`）。zip は git に入れない。
+
+## 公開（2026-11-20）
+
+- リポジトリ N-Hayashi-v8/OBSMUSIC を公開にした（利用者の了承）。説明文も設定した。
+- Release v0.1.0 を作り、`obsmusic-0.1.0-windows-x64.zip` を置いた: https://github.com/N-Hayashi-v8/OBSMUSIC/releases/tag/v0.1.0
+- Release のページで、Assets がリリースノートの下にあることを確かめた。Assets には GitHub が自動で付ける「Source code」の zip と tar.gz も並ぶ。
+- README は、IT や GitHub に慣れていない人向けに推敲し、Go Live、ダウンロードの手順、ProgramData の開き方を足した。説明していないままの語: OBS の「ソース」、zip の展開、既定の再生デバイスの変え方、GPL。
