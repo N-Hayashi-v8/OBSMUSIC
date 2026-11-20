@@ -100,4 +100,5 @@
 
 - `plugin/buildspec.json` の name を `obsmusic`、displayName を `OBSMUSIC` にした。dll は `obsmusic.dll`、入れる先は `C:\ProgramData\obs-studio\plugins\obsmusic\`。
 - author、website、email はテンプレートのまま（配布前に決める）。
-- 古い `plugintemplate-for-obs` のフォルダは、同じソースが2つ登録されるのを避けるため消す。
+- 古い `plugintemplate-for-obs` のフォルダは、同じソースが2つ登録されるのを避けるため消した。
+- 確認: 名前の変更後も、シーンに置いたままの「OBSMUSIC 曲名」ソースが表示された（ソースの id は obsmusic_card のまま）。
