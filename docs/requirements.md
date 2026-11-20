@@ -82,7 +82,7 @@
 - 確認: OBS 33.0.1 で、YouTube Music の曲が変わるたびにログへ出た（日本語も文字化けなし）。
 - 制限: 「現在のセッション」1つだけを見る（試作と同じ）。
 - 次: 読んだ曲を OBS の画面に出す。案は、プラグインが小さな HTTP サーバを持ち、試作の index.html をそのまま配って、OBS のブラウザソースで開く。決めてから作る。
-- 更新手順: OBS が dll を使用中だと上書きできない。OBS を閉じてから、ビルドした dll を `C:\ProgramData\obs-studio\plugins\plugintemplate-for-obs\bin\64bit\` に入れる。
+- 更新手順: OBS が dll を使用中だと上書きできない。OBS を閉じてから、ビルドした dll を `C:\ProgramData\obs-studio\plugins\obsmusic\bin\64bit\` に入れる（名前の変更前は plugintemplate-for-obs だった）。
 
 ## 曲名を描くソース（2026-11-20）
 
@@ -93,5 +93,11 @@
 - 見直しで見つけた2点（読み取りが一度の失敗で止まる、OBS の描画スレッドの中で絵を描いている）は直した。失敗はその回だけ飛ばし、絵は読み取りスレッドで描いて、ソースは受け取るだけにした。
 - ジャケット: 試作と同じ寸法（余白 12、96×96、角丸 8、文字との間 16）で左に描く。正方形に中央で切り抜く。カードは 720×120 になった。OBS で表示を確認した（利用者）。曲名が変わったときに1回だけ読むので、後から差し替わるアプリでは古いままになる。
 - C# の試作アプリのプロセスは止めた（利用者の了承）。
-- 配布前に決めること: ライセンス（テンプレートは GPL-2.0）、プラグイン名（まだ plugintemplate-for-obs）。
+- 配布前に決めること: ライセンス（テンプレートは GPL-2.0）。
 - 調べたい案: obs-browser のイベント送信を使えば、サーバなしで HTML/CSS の見た目にできるかもしれない（未確認）。
+
+## プラグイン名の変更（2026-11-20）
+
+- `plugin/buildspec.json` の name を `obsmusic`、displayName を `OBSMUSIC` にした。dll は `obsmusic.dll`、入れる先は `C:\ProgramData\obs-studio\plugins\obsmusic\`。
+- author、website、email はテンプレートのまま（配布前に決める）。
+- 古い `plugintemplate-for-obs` のフォルダは、同じソースが2つ登録されるのを避けるため消す。
