@@ -73,8 +73,6 @@ static void loop()
 			}
 			obs_log(LOG_INFO, "now playing: %s", now.c_str());
 			last = now;
-			// 絵はここ（OBS の描画スレッドの外）で描いておき、ソースは受け取るだけにする
-			n.pixels = std::make_shared<const std::vector<uint8_t>>(card_draw(n));
 			std::lock_guard<std::mutex> g(mu);
 			n.version = state.version + 1;
 			state = n;
