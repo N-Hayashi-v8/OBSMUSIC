@@ -1,2 +1,5 @@
 bin/
 obj/
+plugin/build_x64/
+plugin/.deps/
+plugin/release/

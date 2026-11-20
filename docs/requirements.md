@@ -61,3 +61,11 @@
 
 - 取得できなくなる原因（ウィンドウタイトルが曲ごとに変わるためか）
 - 配布時に空のデバイスをどう用意してもらうか
+
+## プラグインのビルド（2026-11-20）
+
+- `plugin/` に公式 obs-plugintemplate を取得した（.git は外した。取得元は github.com/obsproject/obs-plugintemplate）。
+- Windows SDK が 10.0.26100 だけなので、`plugin/CMakePresets.json` の `version=10.0.22621` を `10.0.26100` に変えた。これで設定とビルドが通った。
+- 手順（cmake は VS Build Tools 同梱）: `cmake --preset windows-x64` → `cmake --build --preset windows-x64`。設定に約2分かかる（OBS 31.1.1 のソースと依存ファイルを取得してビルドする）。
+- 結果: 空のプラグイン `plugin/build_x64/RelWithDebInfo/plugintemplate-for-obs.dll` ができた。OBS への読み込みは未確認。
+- 注意: テンプレートの対象は OBS 31.1.1。手元の OBS は 33.0.1。
