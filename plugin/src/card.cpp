@@ -12,7 +12,9 @@
 
 #include "nowplaying.h"
 
-static const UINT W = 720, H = 112;
+// 試作の index.html と同じ寸法: 余白 12、ジャケット 96、ジャケットと文字の間 16
+static const UINT W = 720, H = 120;
+static const float PAD = 12, ART = 96, GAP = 16, TX = PAD + ART + GAP;
 
 static std::wstring wide(const std::string &s)
 {
@@ -24,12 +26,47 @@ static std::wstring wide(const std::string &s)
 	return w;
 }
 
+// ジャケットを、正方形に中央で切り抜き、角丸 8 で左に描く（CSS の object-fit: cover と同じ）。画像がなければ何もしない。
+static void draw_art(ID2D1Factory *d2d, IWICImagingFactory *wic, ID2D1RenderTarget *rt, const std::vector<uint8_t> &data)
+{
+	using winrt::com_ptr;
+	if (data.empty())
+		return;
+	com_ptr<IWICStream> ws;
+	com_ptr<IWICBitmapDecoder> dec;
+	com_ptr<IWICBitmapFrameDecode> frame;
+	com_ptr<IWICFormatConverter> cv;
+	com_ptr<ID2D1Bitmap> img;
+	if (FAILED(wic->CreateStream(ws.put())) ||
+	    FAILED(ws->InitializeFromMemory(const_cast<BYTE *>(data.data()), (DWORD)data.size())) ||
+	    FAILED(wic->CreateDecoderFromStream(ws.get(), nullptr, WICDecodeMetadataCacheOnLoad, dec.put())) ||
+	    FAILED(dec->GetFrame(0, frame.put())) || FAILED(wic->CreateFormatConverter(cv.put())) ||
+	    FAILED(cv->Initialize(frame.get(), GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone, nullptr, 0,
+				  WICBitmapPaletteTypeCustom)) ||
+	    FAILED(rt->CreateBitmapFromWicBitmap(cv.get(), img.put())))
+		return;
+
+	auto sz = img->GetSize();
+	float side = sz.width < sz.height ? sz.width : sz.height;
+	auto src = D2D1::RectF((sz.width - side) / 2, (sz.height - side) / 2, (sz.width + side) / 2,
+			       (sz.height + side) / 2);
+	auto dst = D2D1::RectF(PAD, PAD, PAD + ART, PAD + ART);
+
+	com_ptr<ID2D1RoundedRectangleGeometry> clip;
+	com_ptr<ID2D1Layer> layer;
+	d2d->CreateRoundedRectangleGeometry(D2D1::RoundedRect(dst, 8, 8), clip.put());
+	rt->CreateLayer(layer.put());
+	rt->PushLayer(D2D1::LayerParameters(D2D1::InfiniteRect(), clip.get()), layer.get());
+	rt->DrawBitmap(img.get(), dst, 1.0f, D2D1_BITMAP_INTERPOLATION_MODE_LINEAR, &src);
+	rt->PopLayer();
+}
+
 // 背景と文字を描いて、32bit 乗算済みアルファの BGRA を返す。再生中でなければ全面透明。
-static std::vector<uint8_t> render(const NowPlaying &n)
+// COM の初期化済みのスレッド（nowplaying の読み取りスレッド）から呼ぶ。
+std::vector<uint8_t> card_draw(const NowPlaying &n)
 {
 	using winrt::com_ptr;
 	std::vector<uint8_t> out(W * H * 4, 0);
-	CoInitializeEx(nullptr, COINIT_MULTITHREADED); // すでに別の形式で初期化済みなら失敗するが、そのまま使える
 
 	com_ptr<ID2D1Factory> d2d;
 	com_ptr<IDWriteFactory> dw;
@@ -68,9 +105,10 @@ static std::vector<uint8_t> render(const NowPlaying &n)
 		};
 		auto title = wide(n.title), artist = wide(n.artist);
 		rt->DrawText(title.c_str(), (UINT32)title.size(), fmt(28, DWRITE_FONT_WEIGHT_BOLD).get(),
-			     D2D1::RectF(20, 16, W - 20, 56), fg.get());
+			     D2D1::RectF(TX, 20, W - PAD, 60), fg.get());
 		rt->DrawText(artist.c_str(), (UINT32)artist.size(), fmt(20, DWRITE_FONT_WEIGHT_NORMAL).get(),
-			     D2D1::RectF(20, 60, W - 20, 96), fg.get());
+			     D2D1::RectF(TX, 64, W - PAD, 100), fg.get());
+		draw_art(d2d.get(), wic.get(), rt.get(), n.thumb);
 	}
 	rt->EndDraw();
 
@@ -110,17 +148,15 @@ static void card_tick(void *data, float)
 {
 	auto *c = static_cast<Card *>(data);
 	auto n = nowplaying_get();
-	if (n.version == c->seen)
+	if (n.version == c->seen || !n.pixels)
 		return;
 	c->seen = n.version;
-	auto px = render(n);
+	const uint8_t *p = n.pixels->data();
 	obs_enter_graphics();
-	if (!c->tex) {
-		const uint8_t *p = px.data();
+	if (!c->tex)
 		c->tex = gs_texture_create(W, H, GS_BGRA, 1, &p, GS_DYNAMIC);
-	} else {
-		gs_texture_set_image(c->tex, px.data(), W * 4, false);
-	}
+	else
+		gs_texture_set_image(c->tex, p, W * 4, false);
 	obs_leave_graphics();
 }
 
