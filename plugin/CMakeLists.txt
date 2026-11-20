@@ -34,7 +34,7 @@ if(ENABLE_QT)
   )
 endif()
 
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.c src/nowplaying.cpp)
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE windowsapp)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE src/plugin-main.c src/nowplaying.cpp src/card.cpp)
+target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE windowsapp d2d1 dwrite windowscodecs)
 
 set_target_properties_plugin(${CMAKE_PROJECT_NAME} PROPERTIES OUTPUT_NAME ${_name})

@@ -2,6 +2,7 @@
 // 今は 2 秒ごとに読み、曲が変わったら OBS のログに出すだけ。
 #include <atomic>
 #include <chrono>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -18,6 +19,14 @@ using namespace winrt::Windows::Media::Control;
 
 static std::atomic<bool> running;
 static std::thread worker;
+static std::mutex mu;
+static NowPlaying state;
+
+NowPlaying nowplaying_get()
+{
+	std::lock_guard<std::mutex> g(mu);
+	return state;
+}
 
 static std::string utf8(winrt::hstring const &w)
 {
@@ -37,14 +46,21 @@ static void loop()
 		auto mgr = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
 		while (running) {
 			// ponytail: 「現在のセッション」1つだけ見る。複数アプリが鳴るとき YouTube Music を選ぶ処理は未実装
-			std::string now = "(再生なし)";
+			NowPlaying n;
 			if (auto s = mgr.GetCurrentSession()) {
 				auto p = s.TryGetMediaPropertiesAsync().get();
-				now = utf8(p.Title()) + " / " + utf8(p.Artist());
+				n.title = utf8(p.Title());
+				n.artist = utf8(p.Artist());
+				n.playing = s.GetPlaybackInfo().PlaybackStatus() ==
+					    GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing;
 			}
+			std::string now = n.playing ? n.title + " / " + n.artist : "(再生なし)";
 			if (now != last) {
 				obs_log(LOG_INFO, "now playing: %s", now.c_str());
 				last = now;
+				std::lock_guard<std::mutex> g(mu);
+				n.version = state.version + 1;
+				state = n;
 			}
 			std::this_thread::sleep_for(std::chrono::seconds(2));
 		}
