@@ -119,3 +119,10 @@
 - 「ツール → OBSMUSIC モニタリングデバイスの設定」。`obs_enum_audio_monitoring_devices` の一覧（先頭に「既定」、id は default）から選ぶ。OK で `obs_set_audio_monitoring_device` で反映し、`obs_frontend_get_profile_config` の Audio / MonitoringDeviceName・MonitoringDeviceId に書いて `config_save_safe` で保存する（OBS の設定画面と同じ場所）。
 - `plugin/CMakePresets.json` で `ENABLE_QT` をオンにした（OBS 付属の Qt。画面は QDialog と QComboBox）。
 - 確認（利用者）: 既定に変えると二重に聞こえ、SYNCROOM に戻すと消えた。OBS の設定画面にも反映され、再起動後も残った。
+
+## 空のデバイスなしで済ませる案の検証（2026-11-20）
+
+- 仮想デバイスをプラグインから作るのは不可（オーディオドライバと、その署名が要る）。
+- 試した案: モニタリングを既定のデバイスにし、Windows の音量ミキサーで OBS だけを音量 0 またはミュートにする。
+- 結果（利用者が Go Live で確認）: どちらでも、受け取る側に BGM は聞こえなかった。Discord はミキサーで下げた後の音を拾うと考えられる。この案は使えない。
+- 結論: 音の出ないデバイスは必要。配布先の人には、案内（VB-CABLE など）を出す方向で考える。
