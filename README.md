@@ -2,6 +2,8 @@
 
 Discord の Go Live でPCゲームを配信しながら、PCで流しているBGM も一緒に流したい人のための OBS Studio プラグイン（Windows 用）です。
 
+Go Live は Discord のボイスチャンネルで、自分の画面やゲームをほかの人に見せる機能です。
+
 - 曲名カード: 再生中の曲の曲名、アーティスト、ジャケットを、OBS の画面に出します。YouTube Music など、Windows のメディア操作（音量キーで出る再生中の表示）に対応したアプリの曲を読みます。
 - 音声の診断: 音が二重に聞こえる設定になっていないかを確かめます。
 - モニタリングデバイスの設定: 配信用の音を流すデバイスを、一覧から選んで設定します。
@@ -13,15 +15,18 @@ Discord の Go Live でPCゲームを配信しながら、PCで流しているBG
 
 ## 入れ方
 
-1. [Releases](https://github.com/N-Hayashi-v8/OBSMUSIC/releases) から、最新の `obsmusic-<バージョン>-windows-x64.zip` をダウンロードします。
+1. [最新版のダウンロードページ](https://github.com/N-Hayashi-v8/OBSMUSIC/releases/latest) を開きます。ページの下のほうにある「Assets」の一覧から、`obsmusic-<バージョン>-windows-x64.zip` を押すと、ダウンロードが始まります。
 2. OBS を閉じます。
-3. zip の中の `obsmusic` フォルダを、`C:\ProgramData\obs-studio\plugins\` の中にコピーします。`plugins` フォルダがなければ作ってください。
+3. ダウンロードした zip をダブルクリックして開きます。
+4. エクスプローラーの上のアドレス欄に `C:\ProgramData` と入力して、Enter キーを押します。ProgramData は、ふだんは表示されないフォルダですが、この方法で開けます。
+5. ProgramData の中の `obs-studio` フォルダを開き、その中の `plugins` フォルダを開きます。どちらもなければ、その名前で新しいフォルダを作ってください。
+6. 3 で開いた zip の中の `obsmusic` フォルダを、`plugins` フォルダの中にコピーします。管理者の権限を求める画面が出たら、「続行」を押してください。
    次の形になれば正解です。
    ```
    C:\ProgramData\obs-studio\plugins\obsmusic\bin\64bit\obsmusic.dll
    C:\ProgramData\obs-studio\plugins\obsmusic\data\locale\en-US.ini
    ```
-4. OBS を開きます。
+7. OBS を開きます。
 
 ## 音の出ないデバイスを用意する
 
