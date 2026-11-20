@@ -1,11 +1,19 @@
-// 「ツール → OBSMUSIC 音声の診断」。読むだけで、何も変えない。
-// OBS 全体のモニタリングデバイスと、モニタリングしている入力を並べ、音が二重になる設定なら知らせる。
+// 「ツール」メニューの音声まわり。
+// 音声の診断: 読むだけ。OBS 全体のモニタリングデバイスと、モニタリングしている入力を並べ、音が二重になる設定なら知らせる。
+// モニタリングデバイスの設定: 一覧から選んで設定・保存する。
 #include <string>
 
 #include <windows.h>
 
 #include <obs-module.h>
 #include <obs-frontend-api.h>
+#include <util/config-file.h>
+
+#include <QComboBox>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QLabel>
+#include <QVBoxLayout>
 
 #include "nowplaying.h"
 
@@ -61,7 +69,47 @@ static void diagnose(void *)
 		    MB_OK | (doubled ? MB_ICONWARNING : MB_ICONINFORMATION));
 }
 
+// 「ツール → OBSMUSIC モニタリングデバイスの設定」。一覧から選んだデバイスを OBS 全体のモニタリングデバイスにする。
+// OBS の設定画面と同じく、すぐ反映し、プロファイルの設定（Audio の MonitoringDeviceName / MonitoringDeviceId）に保存する。
+static void choose(void *)
+{
+	QDialog dlg(static_cast<QWidget *>(obs_frontend_get_main_window()));
+	dlg.setWindowTitle("OBSMUSIC モニタリングデバイスの設定");
+	auto *lay = new QVBoxLayout(&dlg);
+	lay->addWidget(new QLabel("モニタリングの音を流すデバイスを選んでください。\n"
+				  "音が二重に聞こえないように、音の出ないデバイス（使っていないライン出力や仮想デバイスなど）を選びます。"));
+	auto *box = new QComboBox;
+	box->addItem("既定（Windows の既定の再生デバイス。音が二重に聞こえます）", "default");
+	obs_enum_audio_monitoring_devices(
+		[](void *d, const char *name, const char *id) {
+			static_cast<QComboBox *>(d)->addItem(QString::fromUtf8(name), QString::fromUtf8(id));
+			return true;
+		},
+		box);
+	const char *cur_name = nullptr, *cur_id = nullptr;
+	obs_get_audio_monitoring_device(&cur_name, &cur_id);
+	int cur = box->findData(QString::fromUtf8(cur_id ? cur_id : ""));
+	if (cur >= 0)
+		box->setCurrentIndex(cur);
+	lay->addWidget(box);
+	auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
+	QObject::connect(buttons, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
+	QObject::connect(buttons, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
+	lay->addWidget(buttons);
+	if (dlg.exec() != QDialog::Accepted || box->currentIndex() == cur)
+		return;
+
+	std::string name = box->currentText().toStdString(), id = box->currentData().toString().toStdString();
+	obs_set_audio_monitoring_device(name.c_str(), id.c_str());
+	config_t *cfg = obs_frontend_get_profile_config();
+	config_set_string(cfg, "Audio", "MonitoringDeviceName", name.c_str());
+	config_set_string(cfg, "Audio", "MonitoringDeviceId", id.c_str());
+	config_save_safe(cfg, "tmp", nullptr);
+	blog(LOG_INFO, "[obsmusic] monitoring device: %s (%s)", name.c_str(), id.c_str());
+}
+
 void audio_register()
 {
 	obs_frontend_add_tools_menu_item("OBSMUSIC 音声の診断", diagnose, nullptr);
+	obs_frontend_add_tools_menu_item("OBSMUSIC モニタリングデバイスの設定", choose, nullptr);
 }

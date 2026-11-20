@@ -113,3 +113,9 @@
 - `plugin/src/audio.cpp`: 「ツール → OBSMUSIC 音声の診断」。モニタリングデバイスと、音声のある入力ごとのモニタリング設定をメッセージボックスで出す。既定のデバイスでモニタリングしている入力があれば、二重に聞こえると注意する。読むだけ。
 - 確認: 本人の OBS で、SYNCROOM と各入力の設定が出た（YouTubeMusic、デュエプレ、ワンピシム がモニターと出力）。
 - 次: 空のデバイスを選んで設定・保存する画面。選ぶ画面には OBS 付属の Qt を使う見込み。配布先の人に空のデバイスをどう用意してもらうかは未定。
+
+## モニタリングデバイスの設定画面（2026-11-20）
+
+- 「ツール → OBSMUSIC モニタリングデバイスの設定」。`obs_enum_audio_monitoring_devices` の一覧（先頭に「既定」、id は default）から選ぶ。OK で `obs_set_audio_monitoring_device` で反映し、`obs_frontend_get_profile_config` の Audio / MonitoringDeviceName・MonitoringDeviceId に書いて `config_save_safe` で保存する（OBS の設定画面と同じ場所）。
+- `plugin/CMakePresets.json` で `ENABLE_QT` をオンにした（OBS 付属の Qt。画面は QDialog と QComboBox）。
+- 確認（利用者）: 既定に変えると二重に聞こえ、SYNCROOM に戻すと消えた。OBS の設定画面にも反映され、再起動後も残った。
