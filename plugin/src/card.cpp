@@ -19,7 +19,8 @@
 // プロパティで変えられる見た目。寸法は試作の index.html（曲名 28px のとき、余白 12、ジャケット 96、
 // ジャケットと文字の間 16、高さ 120）を基準に、曲名の文字の大きさに比例させる。
 struct Style {
-	UINT width = 720;
+	UINT width = 720; // fit のときは上限
+	bool fit = true;  // 幅を曲名とアーティストの長さに合わせる
 	std::wstring face = L"Yu Gothic UI";
 	float size = 28;
 	bool bold = true, italic = false;
@@ -88,8 +89,9 @@ static void draw_art(ID2D1Factory *d2d, IWICImagingFactory *wic, ID2D1RenderTarg
 static Pixels draw(const NowPlaying &n, const Style &st)
 {
 	using winrt::com_ptr;
-	const UINT W = st.width, H = st.height();
+	const UINT H = st.height();
 	const float k = st.size / 28, PAD = 12 * k, ART = 96 * k, TX = PAD + ART + 16 * k;
+	UINT W = st.width;
 	Pixels out{W, H, std::vector<uint8_t>(W * H * 4, 0)};
 	CoInitializeEx(nullptr, COINIT_MULTITHREADED); // 同じスレッドで2回目以降は S_FALSE が返るだけ
 
@@ -101,6 +103,39 @@ static Pixels draw(const NowPlaying &n, const Style &st)
 				       reinterpret_cast<IUnknown **>(dw.put()))) ||
 	    FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(wic.put()))))
 		return out;
+
+	auto fmt = [&](float size, DWRITE_FONT_WEIGHT weight) {
+		com_ptr<IDWriteTextFormat> f;
+		if (FAILED(dw->CreateTextFormat(st.face.c_str(), nullptr, weight,
+						st.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL,
+						DWRITE_FONT_STRETCH_NORMAL, size, L"ja-jp", f.put())))
+			return f;
+		f->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+		DWRITE_TRIMMING trim = {DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
+		com_ptr<IDWriteInlineObject> ellipsis;
+		dw->CreateEllipsisTrimmingSign(f.get(), ellipsis.put());
+		f->SetTrimming(&trim, ellipsis.get());
+		return f;
+	};
+	auto tf = fmt(st.size, st.bold ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_NORMAL);
+	auto af = fmt(st.size * 20 / 28, DWRITE_FONT_WEIGHT_NORMAL);
+	auto title = wide(n.title), artist = wide(n.artist);
+
+	// 幅を曲名に合わせるときは、曲名とアーティストの長いほうに合わせる。指定した幅を上限にする。
+	auto measure = [&](const std::wstring &s, IDWriteTextFormat *f) {
+		com_ptr<IDWriteTextLayout> l;
+		DWRITE_TEXT_METRICS m{};
+		if (f && SUCCEEDED(dw->CreateTextLayout(s.c_str(), (UINT32)s.size(), f, 100000.0f, 1000.0f, l.put())))
+			l->GetMetrics(&m);
+		return m.widthIncludingTrailingWhitespace;
+	};
+	if (st.fit && n.playing) {
+		float tw = measure(title, tf.get()), aw = measure(artist, af.get());
+		UINT need = (UINT)(TX + (tw > aw ? tw : aw) + PAD + 1);
+		if (need < W)
+			W = need;
+		out = Pixels{W, H, std::vector<uint8_t>(W * H * 4, 0)};
+	}
 
 	com_ptr<IWICBitmap> bmp;
 	com_ptr<ID2D1RenderTarget> rt;
@@ -117,23 +152,6 @@ static Pixels draw(const NowPlaying &n, const Style &st)
 		rt->CreateSolidColorBrush(color(st.text), fg.put());
 		rt->FillRoundedRectangle(D2D1::RoundedRect(D2D1::RectF(0, 0, (float)W, (float)H), 12 * k, 12 * k),
 					 bg.get());
-
-		auto fmt = [&](float size, DWRITE_FONT_WEIGHT weight) {
-			com_ptr<IDWriteTextFormat> f;
-			if (FAILED(dw->CreateTextFormat(st.face.c_str(), nullptr, weight,
-							st.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL,
-							DWRITE_FONT_STRETCH_NORMAL, size, L"ja-jp", f.put())))
-				return f;
-			f->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-			DWRITE_TRIMMING trim = {DWRITE_TRIMMING_GRANULARITY_CHARACTER, 0, 0};
-			com_ptr<IDWriteInlineObject> ellipsis;
-			dw->CreateEllipsisTrimmingSign(f.get(), ellipsis.put());
-			f->SetTrimming(&trim, ellipsis.get());
-			return f;
-		};
-		auto tf = fmt(st.size, st.bold ? DWRITE_FONT_WEIGHT_BOLD : DWRITE_FONT_WEIGHT_NORMAL);
-		auto af = fmt(st.size * 20 / 28, DWRITE_FONT_WEIGHT_NORMAL);
-		auto title = wide(n.title), artist = wide(n.artist);
 		if (tf)
 			rt->DrawText(title.c_str(), (UINT32)title.size(), tf.get(), D2D1::RectF(TX, 20 * k, W - PAD, 60 * k),
 				     fg.get());
@@ -179,6 +197,7 @@ static void card_defaults(obs_data_t *s)
 	obs_data_set_default_obj(s, "font", font);
 	obs_data_release(font);
 	obs_data_set_default_int(s, "width", d.width);
+	obs_data_set_default_bool(s, "fit", d.fit);
 	obs_data_set_default_int(s, "text_color", d.text);
 	obs_data_set_default_int(s, "back_color", d.back);
 }
@@ -187,7 +206,8 @@ static obs_properties_t *card_properties(void *)
 {
 	obs_properties_t *p = obs_properties_create();
 	obs_properties_add_font(p, "font", "フォント（大きさは曲名の文字。全体の高さもこれに合わせて変わる）");
-	obs_properties_add_int(p, "width", "幅", 200, 3840, 10);
+	obs_properties_add_bool(p, "fit", "幅を曲名の長さに合わせる");
+	obs_properties_add_int(p, "width", "幅（合わせるときは最大の幅）", 200, 3840, 10);
 	obs_properties_add_color_alpha(p, "text_color", "文字の色");
 	obs_properties_add_color_alpha(p, "back_color", "背景の色");
 	return p;
@@ -207,6 +227,7 @@ static void card_update(void *data, obs_data_t *s)
 	if (st.size < 8)
 		st.size = 8;
 	st.width = (UINT)obs_data_get_int(s, "width");
+	st.fit = obs_data_get_bool(s, "fit");
 	st.text = (uint32_t)obs_data_get_int(s, "text_color");
 	st.back = (uint32_t)obs_data_get_int(s, "back_color");
 	std::lock_guard<std::mutex> g(c->mu);
