@@ -69,3 +69,9 @@
 - 手順（cmake は VS Build Tools 同梱）: `cmake --preset windows-x64` → `cmake --build --preset windows-x64`。設定に約2分かかる（OBS 31.1.1 のソースと依存ファイルを取得してビルドする）。
 - 結果: 空のプラグイン `plugin/build_x64/RelWithDebInfo/plugintemplate-for-obs.dll` ができた。OBS への読み込みは未確認。
 - 注意: テンプレートの対象は OBS 31.1.1。手元の OBS は 33.0.1。
+
+## プラグインの読み込み確認（2026-11-20）
+
+- 結果: OBS 33.0.1 のログに `plugin loaded successfully (version 1.0.0)` が出た。テンプレート（31.1.1 対象）のまま 33.0.1 で読み込める。
+- 置き場所: Windows でユーザーが入れるプラグインは `C:\ProgramData\obs-studio\plugins\<名前>\bin\64bit\<名前>.dll`（データは同じ階層の `data\`）。`%APPDATA%\obs-studio\plugins` は探されない（OBS 31.1.1 のソース OBSBasic.cpp で確認）。
+- 気になる点: ログに `Failed to load 'en-US' text for module` が出る。ロケールの置き場所の問題と思われるが、原因は未確認（動作には影響しない）。
