@@ -28,6 +28,7 @@ bool obs_module_load(void)
 	obs_log(LOG_INFO, "plugin loaded successfully (version %s)", PLUGIN_VERSION);
 	nowplaying_start();
 	card_register();
+	audio_register();
 	return true;
 }
 

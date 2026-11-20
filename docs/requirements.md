@@ -105,3 +105,11 @@
 - author、website、email はテンプレートのまま（配布前に決める）。
 - 古い `plugintemplate-for-obs` のフォルダは、同じソースが2つ登録されるのを避けるため消した。
 - 確認: 名前の変更後も、シーンに置いたままの「OBSMUSIC 曲名」ソースが表示された（ソースの id は obsmusic_card のまま）。
+
+## プラグインの音声の診断（2026-11-20）
+
+- 調べたこと: libobs に `obs_set_audio_monitoring_device` / `obs_get_audio_monitoring_device` / `obs_enum_audio_monitoring_devices` がある。OBS の設定画面も内部でこれを使う。ただし保存は画面側がプロファイルの設定（Audio の MonitoringDeviceId / MonitoringDeviceName）に書いている。プラグインから保存するには obs-frontend-api の `obs_frontend_get_profile_config` を使う（未実装）。
+- `plugin/CMakePresets.json` で `ENABLE_FRONTEND_API` をオンにした（OBS 付属の部品で、新しい外部の依存ではない）。
+- `plugin/src/audio.cpp`: 「ツール → OBSMUSIC 音声の診断」。モニタリングデバイスと、音声のある入力ごとのモニタリング設定をメッセージボックスで出す。既定のデバイスでモニタリングしている入力があれば、二重に聞こえると注意する。読むだけ。
+- 確認: 本人の OBS で、SYNCROOM と各入力の設定が出た（YouTubeMusic、デュエプレ、ワンピシム がモニターと出力）。
+- 次: 空のデバイスを選んで設定・保存する画面。選ぶ画面には OBS 付属の Qt を使う見込み。配布先の人に空のデバイスをどう用意してもらうかは未定。

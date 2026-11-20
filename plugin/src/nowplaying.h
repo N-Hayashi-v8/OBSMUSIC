@@ -21,6 +21,7 @@ extern "C" {
 void nowplaying_start(void);
 void nowplaying_stop(void);
 void card_register(void);
+void audio_register(void);
 
 #ifdef __cplusplus
 }
