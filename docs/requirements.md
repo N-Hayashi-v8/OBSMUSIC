@@ -75,3 +75,11 @@
 - 結果: OBS 33.0.1 のログに `plugin loaded successfully (version 1.0.0)` が出た。テンプレート（31.1.1 対象）のまま 33.0.1 で読み込める。
 - 置き場所: Windows でユーザーが入れるプラグインは `C:\ProgramData\obs-studio\plugins\<名前>\bin\64bit\<名前>.dll`（データは同じ階層の `data\`）。`%APPDATA%\obs-studio\plugins` は探されない（OBS 31.1.1 のソース OBSBasic.cpp で確認）。
 - 気になる点: ログに `Failed to load 'en-US' text for module` が出る。ロケールの置き場所の問題と思われるが、原因は未確認（動作には影響しない）。
+
+## プラグインで曲名を読む（2026-11-20）
+
+- `plugin/src/nowplaying.cpp`: 別スレッドで 2 秒ごとに SMTC を読み、曲が変わると OBS のログに `now playing: 曲名 / アーティスト` を出す。C++/WinRT（Windows SDK 同梱）で書き、新しい依存は入れていない。`CMakeLists.txt` に `windowsapp` のリンクを足した。
+- 確認: OBS 33.0.1 で、YouTube Music の曲が変わるたびにログへ出た（日本語も文字化けなし）。
+- 制限: 「現在のセッション」1つだけを見る（試作と同じ）。
+- 次: 読んだ曲を OBS の画面に出す。案は、プラグインが小さな HTTP サーバを持ち、試作の index.html をそのまま配って、OBS のブラウザソースで開く。決めてから作る。
+- 更新手順: OBS が dll を使用中だと上書きできない。OBS を閉じてから、ビルドした dll を `C:\ProgramData\obs-studio\plugins\plugintemplate-for-obs\bin\64bit\` に入れる。
